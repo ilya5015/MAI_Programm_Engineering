@@ -1,0 +1,10 @@
+version: "3"
+services:
+  structurizr:
+    image: structurizr/lite
+    ports:
+      - 8080:8080
+    volumes:
+      - ./workspace:/usr/local/structurizr
+      - ./workspace:/usr/local/structurizr/documentation
+      - ./workspace:/usr/local/structurizr/decisions
