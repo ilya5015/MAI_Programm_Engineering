@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  users_service:
+    build:
+      context: ./src/users_service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+
+  ordering_service:
+    build:
+      context: ./src/ordering_service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+
+  api_gateway:
+    build:
+      context: ./src/api_gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      - users_service
+      - ordering_service
