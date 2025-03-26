@@ -21,12 +21,12 @@ workspace "Система заказа услуг" {
                 description "Provides functionality for customers and contractors via a JSON/HTTPS API."
                 technology "Python, FastAPI"
 
-                authService = component "Auth_service" {
-                    description "Регистрация и авторизация пользователей в роли заказчика или подрядчика"
+                apiGateway = component "API_Gateway" {
+                    description "Объединяет и маршрутизирует запросы к различным сервисам, обеспечивая единую точку входа для клиентов и защищая внутреннюю инфраструктуру"
                 }
 
-                securityService = component "Security_service" {
-                    description "создание и выдача JWT в зависимости от роли, проверка JWT, добавление данных о регистрации пользователей в БД"
+                userService = component "User_service" {
+                    description "Регистрация и авторизация пользователей, проверка jwt, получение информации о пользователях"
                 }
 
                 serviceComponent = component "Service_component" {
@@ -35,16 +35,7 @@ workspace "Система заказа услуг" {
                 
                 orderingService = component "Ordering_service" {
                     description "Предоставляет функционал для работы с заказами покупателей: добавление услуг в заказ, получение заказа пользователя"
-                } 
-
-                orderingController = component "Ordering_controller" {
-                    description "Контроллер для работы с таблицами заказов"
-                } 
-
-                servicesController = component "Services_controller" {
-                    description "Контроллер для работы с таблицами услуг"
-                } 
-                
+                }                 
             }
 
             database = container "Database" {
@@ -64,16 +55,26 @@ workspace "Система заказа услуг" {
         apiApplication -> Database "Читает и сохраняет данные"
 
         # C3 conns
-        orderingController -> Database "CRUD"
-        servicesController -> Database "CRUD"
-        authService -> securityService 
-        securityService -> Database "CRUD"
-        orderingService -> orderingController
-        serviceComponent -> servicesController
+        orderingService -> Database "CRUD"
+        serviceComponent -> Database "CRUD"
+        userService -> Database "CRUD"
+        apiGateway -> userService
+        apiGateway -> serviceComponent
+        apiGateway -> orderingService
         }
 
     views {
     themes default
+
+    dynamic order_system "uc1" "Создать заказ с услугой" {
+            autoLayout lr
+
+            customer -> webApp "Создает заказ с услугой"
+            webApp -> apiApplication "Создает запрос на создание нового заказа для пользователя"
+            apiApplication -> database "Сохраняет данные о новом заказе"
+            apiApplication -> webApp "Создает ответ на запрос о создании заказа"
+            webApp -> customer "Оповещает об удачном/неудачном создании заказа"
+        }
 
     systemContext order_system "C1" {
         include *
