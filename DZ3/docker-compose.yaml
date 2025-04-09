@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  postgres_db:
+    image: postgres:14
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  users_service:
+    build:
+      context: ./src/users_service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:secret@postgres_db:5432/user_db
+
+  ordering_service:
+    build:
+      context: ./src/ordering_service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+
+  api_gateway:
+    build:
+      context: ./src/api_gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      - users_service
+      - ordering_service
+
+volumes:
+  db_data:
