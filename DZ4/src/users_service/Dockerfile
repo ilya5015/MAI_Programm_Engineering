@@ -9,5 +9,5 @@ COPY alembic.ini .
 COPY ./alembic ./alembic
 COPY ./src ./src
 
-CMD ["bash", "-c", "alembic upgrade head && python init_admin.py && python init_dummy_users.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["bash", "-c", "alembic upgrade head && python src/init_admin.py && python src/init_users.py && uvicorn src.main:app --host 0.0.0.0 --port 8000"]
 
