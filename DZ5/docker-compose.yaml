@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  postgres_db:
+    image: postgres:14
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  mongo_db:
+    image: mongo:5
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    container_name: redis
+    image: redis:7.2.4-alpine
+    restart: always
+    volumes:
+      - cache_redis:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "6379:6379"
+
+  users_service:
+    build:
+      context: ./src/users_service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:secret@postgres_db:5432/user_db
+
+  ordering_service:
+    build:
+      context: ./src/ordering_service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGODB_URL=mongodb://mongo_db:27017
+      - MONGODB_DB=orders_db
+
+  api_gateway:
+    build:
+      context: ./src/api_gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      - users_service
+      - ordering_service
+
+volumes:
+  db_data:
+  mongo_data:
+  cache_redis:
